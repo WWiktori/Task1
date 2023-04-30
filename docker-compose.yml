@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  mysql-master:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./data/mysql-master:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  mysql-slave:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_MASTER_HOST: mysql-master
+      MYSQL_MASTER_PASSWORD: root
+      MYSQL_REPL_USER: replication
+      MYSQL_REPL_PASSWORD: replication
+    volumes:
+      - ./data/mysql-slave:/var/lib/mysql
+    ports:
+      - "3307:3307"
+
+  check-replication:
+    build: .
+    restart: always
+    depends_on:
+      - mysql-master
+      - mysql-slave
+    environment:
+      SMTP_SERVER: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USERNAME: your_email_address@gmail.com
+      SMTP_PASSWORD: your_email_password
+      EMAIL_TO: v.vojcieskiy@gmail.com
+    volumes:
+      - ./bash.sh:/usr/local/bin/bash.sh
+    command: /bin/bash -c "while true; do sleep 30; /usr/local/bin/bash.sh; done"
